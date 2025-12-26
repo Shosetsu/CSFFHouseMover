@@ -1,0 +1,79 @@
+.content {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+h1 {
+  color: #1a237e;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.empty-state {
+  display: grid;
+  justify-items: center;
+  padding: 40px 20px;
+  margin: 30px 0;
+
+  color: #333;
+  border: 2px solid #ccc;
+  border-radius: 20px;
+  box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
+  cursor: pointer;
+
+  &:hover {
+    box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+  }
+}
+
+.selection-area {
+  padding: 20px;
+  border: 2px solid #ccc;
+  border-radius: 20px;
+  box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
+}
+
+.select-pair {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.house-select,
+.destination-select {
+  flex: 1;
+}
+
+.button-group {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+
+.action-btn {
+  min-width: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .svg-icon {
+    height: 16px;
+    width: 16px;
+    margin-right: 8px;
+  }
+}
+
+.svg-icon {
+  height: 48px;
+  width: 48px;
+  opacity: 0.8;
+
+  &:hover {
+    opacity: 0.5;
+  }
+}
+
+.red {
+  color: #e60000;
+}

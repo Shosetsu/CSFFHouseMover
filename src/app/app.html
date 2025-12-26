@@ -1,0 +1,74 @@
+<main class="main">
+  <div class="content">
+    <h1>卡牌生存：奇幻森林 存档搬家工具</h1>
+
+    <label class="empty-state">
+      <img class="svg-icon" src="file-upload.svg" />
+      <p>
+        {{
+          data
+            ? '正在修改' + saveFileName + '，要更换一个存档吗？'
+            : '请先选择一个存档文件以开始编辑'
+        }}
+      </p>
+      <p>
+        存档可以在：<span class="red"
+          >%userprofile%\AppData\LocalLow\WinterSpring Games\Card Survival - Fantasy
+          Forest\Games\</span
+        >中找到
+      </p>
+      <input #save hidden type="file" accept=".json" (change)="onFileSelected(save)" />
+    </label>
+
+    <!-- 房子选择区域 -->
+    <div class="selection-area">
+      <div class="select-pair">
+        <!-- 存档中存在的房子 -->
+        <mat-form-field class="house-select" appearance="outline">
+          <mat-label>存档中存在的房子</mat-label>
+          <mat-select [(value)]="selectedHouse" placeholder="请选择要搬迁的房子">
+            @for(code of houses();track code.code){
+            <mat-option [value]="code"> {{ code.label }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <!-- 搬迁至 -->
+        <mat-form-field class="destination-select" appearance="outline">
+          <mat-label>搬迁至→</mat-label>
+          <mat-select [(value)]="selectedDestination" placeholder="请选择新位置">
+            @for(code of availableLocations();track code.code){
+            <mat-option [value]="code" [disabled]="code.key === selectedHouse()?.env">
+              {{ code.label }}
+            </mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <!-- 操作按钮 -->
+      <div class="button-group">
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="startMoving()"
+          [disabled]="!selectedHouse() || !selectedDestination()"
+          class="action-btn"
+        >
+          <img class="svg-icon" src="pin-location.svg" />
+          <span>开始搬家</span>
+        </button>
+        <button
+          mat-raised-button
+          color="accent"
+          (click)="saveArchive()"
+          [disabled]="!data"
+          class="action-btn"
+        >
+          <img class="svg-icon" src="save.svg" />
+          <span>保存存档</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</main>
