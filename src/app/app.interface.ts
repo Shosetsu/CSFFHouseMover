@@ -1,5 +1,5 @@
 /** 移动选项 */
-export type MoverOption<T extends Card> = {
+export interface MoverOption<T extends Card> {
   /** 显示文本 */
   label: string;
   /** 类型 */
@@ -10,7 +10,7 @@ export type MoverOption<T extends Card> = {
   env?: string;
   /** 是否为当前环境的标记 */
   current?: boolean;
-};
+}
 
 export interface SaveData {
   /** 当前环境卡片 */
@@ -58,17 +58,12 @@ export interface Card {
   Special2: number;
   Special3: number;
   Special4: number;
-  Flavours: any[];
-  Spices: any[];
   ExplorationData: {
     CurrentExploration: number;
     ExplorationResults: ExplorationResult[];
   };
   TravelTargetKey: string;
   SavedRecipe: SavedRecipe;
-  CollectionUses: any[];
-  StatTriggeredActions: any[];
-  PlayerAssignedDuties: any[];
   CombatState: number;
 }
 

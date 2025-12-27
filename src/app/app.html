@@ -4,10 +4,10 @@
 
     <!-- 存档上传区域 -->
     <label class="file-area">
-      <img class="svg-icon" [src]="(data() ? 'update' : 'upload') + '.svg'" />
+      <img class="svg-icon" [src]="(saveFileName ? 'update' : 'upload') + '.svg'" alt="upload" />
       <p>
         {{
-          data()
+          saveFileName
             ? '正在修改' + saveFileName + '，要更换一个存档吗？'
             : '请先选择一个存档文件以开始编辑'
         }}
@@ -18,22 +18,18 @@
           Forest\Games\</span
         >中找到
       </p>
-      <input #save hidden type="file" accept=".json" (change)="onFileSelected(save)" />
+      <input #save hidden type="file" accept=".json" (change)="selectSaveFile(save)" />
     </label>
 
     <!-- 高级选项区域 -->
     <div class="selection-area">
       <div class="select-pair">
         <!-- 开关 -->
-        <label>
-          <mat-checkbox
-            [value]="notHouse() ? 'checked' : ''"
-            (change)="notHouse.set(!notHouse())"
-            [disabled]="!data()"
-          >
+        <div>
+          <mat-checkbox [value]="notHouse() ? 'checked' : ''" (change)="notHouse.set(!notHouse())">
             <span>是否打开高级搬迁功能</span>
           </mat-checkbox>
-        </label>
+        </div>
 
         <!-- 关键字 -->
         @if(notHouse()){
@@ -94,33 +90,33 @@
         <button
           mat-raised-button
           color="primary"
-          (click)="startMovingOther()"
+          (click)="moveCard()"
           [disabled]="!selectedTarget() || !selectedDestination()"
           class="action-btn"
         >
-          <img class="svg-icon" src="pin-location.svg" />
-          <span>开始搬…</span>
+          <img class="svg-icon" src="pin-location.svg" alt="relocate" />
+          <span>开始搬{{ targetKey() }}</span>
         </button>
         }@else{
         <button
           mat-raised-button
           color="primary"
-          (click)="startMoving()"
+          (click)="moveHouse()"
           [disabled]="!selectedTarget() || !selectedDestination()"
           class="action-btn"
         >
-          <img class="svg-icon" src="pin-location.svg" />
+          <img class="svg-icon" src="pin-location.svg" alt="relocate" />
           <span>开始搬家</span>
         </button>
         }
         <button
           mat-raised-button
           color="accent"
-          (click)="saveArchive()"
-          [disabled]="!data"
+          (click)="download()"
+          [disabled]="!saveFileName"
           class="action-btn"
         >
-          <img class="svg-icon" src="save.svg" />
+          <img class="svg-icon" src="save.svg" alt="save" />
           <span>保存存档</span>
         </button>
       </div>

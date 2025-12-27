@@ -31,19 +31,19 @@ export class App {
   /** 选中的目标环境卡片选项 */
   selectedDestination = signal<MoverOption<EnvCard> | undefined>(undefined);
 
-  /** 保存文件的名称 */
+  /** 存档文件名 */
   saveFileName = '';
-  /** 游戏存档数据 */
-  data = signal<SaveData | undefined>(undefined);
+  /** 存档数据 */
+  private data = signal<SaveData | undefined>(undefined);
 
   /** 当前环境卡片 */
   private currentEnv?: EnvCard;
 
-  /** 是否为非房屋类型卡片的标记 */
+  /** 非搬房子模式标识 */
   notHouse = signal(false);
-  /** 目标卡片的键值 */
+  /** 搜索目标卡片的关键字 */
   targetKey = signal('GardenPlot');
-  /** 预设可选的目标键值集合 */
+  /** 预设的一些关键字 */
   keysets = [
     { value: 'GardenPlot', label: '菜园' },
     { value: 'RainCistern', label: '雨水窖' },
@@ -101,7 +101,7 @@ export class App {
           'ellar)': '地窖',
           'udHut)': '泥屋',
           'osure)': '畜栏',
-        }[card.CardID.slice(-6) as string];
+        }[card.CardID.slice(-6)];
 
         return {
           label: `${
@@ -151,28 +151,33 @@ export class App {
    * 读取并解析选中的存档文件
    * @param file HTML文件输入元素
    */
-  async onFileSelected(file: HTMLInputElement): Promise<void> {
-    this.saveFileName = file.files?.[0].name ?? '';
-    this.data.set(JSON.parse((await file.files?.[0].text()) ?? ''));
-    this.currentEnv = this.data()?.CurrentEnvironmentCard;
-    this.selectedTarget.set(this.targetList()[0]);
+  async selectSaveFile(file: HTMLInputElement): Promise<void> {
+    try {
+      this.saveFileName = file.files?.[0].name ?? '';
+      this.data.set(JSON.parse((await file.files?.[0].text()) ?? ''));
+      this.currentEnv = this.data()?.CurrentEnvironmentCard;
+      this.selectedTarget.set(this.targetList()[0]);
+    } catch {
+      this.saveFileName = '';
+      this.data.set(undefined);
+    }
   }
 
   /**
    * 开始移动卡片
    * 将选中的卡片从一个环境移动到另一个环境
    */
-  startMoving(): void {
+  moveHouse(): void {
     const refData = this.data()!;
     const current = this.selectedTarget()!;
     const oldEnv = current.ref.EnvironmentKey;
     const newEnv = this.selectedDestination()!.ref.DictionaryKey;
 
-    // 先搬进屋卡
+    // 更新入口卡片
     current.ref.EnvironmentKey = newEnv;
     console.log('changed: ', oldEnv, '→', current.ref.EnvironmentKey);
 
-    // 删掉旧卡
+    // 删掉旧入口
     if (current.current) {
       // 如果在当前区域
       refData.CurrentCardsData.splice(
@@ -190,7 +195,7 @@ export class App {
       );
     }
 
-    // 添加新卡
+    // 添加新入口
     if (this.selectedDestination()!.current) {
       // 如果在当前区域
       refData.CurrentCardsData.push(current.ref);
@@ -210,9 +215,10 @@ export class App {
         地窖: 'Cellar',
         泥屋: 'MudHut',
         畜栏: 'Enclosure',
-      }[current.type as string];
+      }[current.type!];
 
-    const rpList = refData.EnvironmentsData.filter(
+    // 完全替换
+    refData.EnvironmentsData.filter(
       (env) =>
         env.DictionaryKey.includes(keyword) &&
         env.DictionaryKey.match(
@@ -223,38 +229,62 @@ export class App {
               '($|_)'
           )
         )
-    ).map((env) => ({
-      old: env.DictionaryKey,
-      new: env.DictionaryKey.replaceAll(oldEnv, newEnv),
-    }));
-
-    // 完全替换
-    rpList.forEach((rps) => {
-      this.replaceAllData(refData, rps.old, rps.new);
-      this.replaceAllData(
-        refData,
-        rps.old.replace(/\(.+?\)/g, ''),
-        rps.new.replace(/\(.+?\)/g, '')
-      );
+    ).forEach((env) => {
+      const oldKey = env.DictionaryKey;
+      const newKey = env.DictionaryKey.replaceAll(oldEnv, newEnv);
+      this.replaceAllData(refData, oldKey, newKey);
+      this.replaceAllData(refData, oldKey.replace(/\(.+?\)/g, ''), newKey.replace(/\(.+?\)/g, ''));
     });
 
     this.tick.update((t) => !t);
   }
 
   /**
-   * 开始移动其他卡片
-   * 只更新卡片的环境键值，不进行完整的移动逻辑
+   * 替换数据中的所有匹配项
+   * 递归替换对象中所有包含r1的字符串为r2
+   * @param data 要处理的数据对象
+   * @param r1 原始字符串
+   * @param r2 替换字符串
    */
-  startMovingOther(): void {
+  private replaceAllData(data: SaveData, r1: string, r2: string): void {
+    console.log('changing: ', r1, '→', r2);
+    (Object.keys(data) as (keyof SaveData)[]).forEach(
+      (key) => (data[key] = JSON.parse(JSON.stringify(data[key]).replaceAll(r1, r2)))
+    );
+  }
+
+  /**
+   * 移动其他卡片
+   * 只更新卡片的环境键值
+   */
+  moveCard(): void {
     const current = this.selectedTarget()!;
     const oldEnv = current.ref.EnvironmentKey;
     const newEnv = this.selectedDestination()!.ref.DictionaryKey;
 
-    // 改卡
+    // 更新卡片
     current.ref.EnvironmentKey = newEnv;
     console.log('changed: ', oldEnv, '→', current.ref.EnvironmentKey);
 
     this.tick.update((t) => !t);
+  }
+
+  /**
+   * 下载修改过的存档文件
+   * 将当前数据导出为JSON文件并触发下载
+   */
+  download(): void {
+    const jsonString = JSON.stringify(this.data());
+    const blob = new Blob([jsonString], { type: 'application/json' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = this.saveFileName;
+
+    document.body.appendChild(link);
+    link.click();
+
+    document.body.removeChild(link);
+    URL.revokeObjectURL(link.href);
   }
 
   /**
@@ -270,37 +300,5 @@ export class App {
       (key && LOCATIONS.find((loc) => loc.key === key.replace(/(Q|E|W)+$/g, ''))?.label) ??
       defaultValue
     );
-  }
-
-  /**
-   * 替换数据中的所有匹配项
-   * 递归替换对象中所有包含r1的字符串为r2
-   * @param data 要处理的数据对象
-   * @param r1 原始字符串
-   * @param r2 替换字符串
-   */
-  private replaceAllData(data: Record<string, any>, r1: string, r2: string): void {
-    console.log('changing: ', r1, '→', r2);
-    Object.keys(data).forEach(
-      (key) => (data[key] = JSON.parse(JSON.stringify(data[key]).replaceAll(r1, r2)))
-    );
-  }
-
-  /**
-   * 保存存档文件
-   * 将当前数据导出为JSON文件并触发下载
-   */
-  saveArchive(): void {
-    const jsonString = JSON.stringify(this.data());
-    const blob = new Blob([jsonString], { type: 'application/json' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = this.saveFileName;
-
-    document.body.appendChild(link);
-    link.click();
-
-    document.body.removeChild(link);
-    URL.revokeObjectURL(link.href);
   }
 }
