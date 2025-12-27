@@ -28,7 +28,7 @@
           <mat-label>存档中存在的房子</mat-label>
           <mat-select [(value)]="selectedHouse" placeholder="请选择要搬迁的房子">
             @for(code of houses();track code.code){
-            <mat-option [value]="code"> {{ code.label }}</mat-option>
+            <mat-option [value]="code">{{ code.label }}@if(code.current){（当前）}</mat-option>
             }
           </mat-select>
         </mat-form-field>
@@ -38,8 +38,11 @@
           <mat-label>搬迁至→</mat-label>
           <mat-select [(value)]="selectedDestination" placeholder="请选择新位置">
             @for(code of availableLocations();track code.code){
-            <mat-option [value]="code" [disabled]="code.key === selectedHouse()?.env">
-              {{ code.label }}
+            <mat-option
+              [value]="code"
+              [disabled]="code.key === selectedHouse()?.env || code.current"
+            >
+              {{ code.label }}@if(code.current){（当前）}
             </mat-option>
             }
           </mat-select>

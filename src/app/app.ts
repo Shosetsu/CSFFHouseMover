@@ -4,7 +4,14 @@ import { MatOption, MatSelect } from '@angular/material/select';
 import { LOCATIONS } from './const/const';
 import { MatButton } from '@angular/material/button';
 
-type Code = { code: string; label: string; key?: string; ref?: any; env?: string };
+type Code = {
+  code: string;
+  label: string;
+  key?: string;
+  ref?: any;
+  env?: string;
+  current?: boolean;
+};
 
 @Component({
   selector: 'app-root',
@@ -22,9 +29,13 @@ export class App {
   saveFileName = '';
   data: any;
 
+  private currentEnv: any;
+
   async onFileSelected(file: HTMLInputElement): Promise<void> {
     this.saveFileName = file.files?.[0].name ?? '';
     this.data = JSON.parse((await file.files?.[0].text()) ?? '');
+    this.currentEnv = this.data.CurrentEnvironmentCard;
+
     this.setData();
     this.selectedHouse.set(this.houses()[0]);
   }
@@ -39,6 +50,7 @@ export class App {
             key: name,
             label: LOCATIONS.find((lo) => lo.key === name)?.label ?? '',
             ref: env,
+            current: this.currentEnv.CardID === env.DictionaryKey,
           };
         })
         .filter((env) => env.label)
@@ -65,6 +77,7 @@ export class App {
             ref: card,
             key: type,
             env: envKey,
+            current: this.currentEnv.CardID === card.EnvironmentKey,
           };
         })
         .filter((env) => env.label)
@@ -85,9 +98,10 @@ export class App {
       (env) => env.DictionaryKey === oldEnv
     ).AllRegularCards as any[];
     oldEnvRegulars.splice(
-      oldEnvRegulars.findIndex((card) => card.CardID === current.ref.CardID),
+      oldEnvRegulars.findIndex((card) => card === current.ref),
       1
     );
+
     // 添加新进屋卡
     const newEnvRegulars = (this.data.EnvironmentsData as any[]).find(
       (env) => env.DictionaryKey === newEnv
@@ -106,7 +120,11 @@ export class App {
 
     const rpList = (this.data.EnvironmentsData as any[])
       .filter(
-        (env) => env.DictionaryKey.includes(keyword) && env.DictionaryKey.includes(current.env)
+        (env) =>
+          env.DictionaryKey.includes(keyword) &&
+          env.DictionaryKey.includes(
+            current.env + (current.ref.TravelCardIndex ? ')=' + current.ref.TravelCardIndex : '')
+          )
       )
       .map((env) => ({
         old: env.DictionaryKey,
