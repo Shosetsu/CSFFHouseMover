@@ -1,4 +1,4 @@
-import { Component, computed, signal } from '@angular/core';
+import { Component, computed, effect, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButton } from '@angular/material/button';
@@ -10,7 +10,6 @@ import { LOCATIONS } from './const/const';
 import { Card, EnvCard, SaveData } from './const/types';
 
 type Code<T extends Card> = {
-  code: string;
   label: string;
   key?: string;
   ref: T;
@@ -51,7 +50,10 @@ export class App {
     { value: '5a3586eda3d3bca49bef4e3cab7b28e1(TanningPit)', label: '鞣制坑' },
   ];
 
-  houses = computed<Code<Card>[]>(() => {
+  private tick = signal(false);
+
+  targetList = computed<Code<Card>[]>(() => {
+    this.tick();
     if (this.notHouse()) {
       return [
         ...(this.data()?.CurrentInventoryCards || []),
@@ -94,7 +96,6 @@ export class App {
         }[card.CardID.slice(-6) as string];
 
         return {
-          code: envKey + card.CardID,
           label: `${
             card.CustomName || type || card.CardID.match(/\((.+)\)/)?.[1] || card.CardID
           }（${LOCATIONS.find((lo) => lo.key === envKey)?.label}）`,
@@ -107,12 +108,19 @@ export class App {
       .filter((env) => env.label);
   });
 
+  targetListEffect = effect(() => {
+    this.selectedTarget.set(
+      this.targetList().find(
+        (target) => JSON.stringify(target.ref) === JSON.stringify(this.selectedTarget()?.ref)
+      ) ?? this.targetList()[0]
+    );
+  });
+
   availableLocations = computed<Code<EnvCard>[]>(() =>
     (
       this.data()?.EnvironmentsData.map((env) => {
         const [key, name] = env.DictionaryKey.slice(0, env.DictionaryKey.length - 1).split('(');
         return {
-          code: key,
           key: name,
           label: LOCATIONS.find((lo) => lo.key === name)?.label ?? '',
           ref: env,
@@ -126,7 +134,7 @@ export class App {
     this.saveFileName = file.files?.[0].name ?? '';
     this.data.set(JSON.parse((await file.files?.[0].text()) ?? ''));
     this.currentEnv = this.data()?.CurrentEnvironmentCard;
-    this.selectedTarget.set(this.houses()[0]);
+    this.selectedTarget.set(this.targetList()[0]);
   }
 
   startMoving(): void {
@@ -169,45 +177,6 @@ export class App {
       newEnvRegulars.push(current.ref);
     }
 
-    // 只有搬房子才需要
-    this.moveHouseEnv();
-
-    this.data.update(() => ({ ...refData }));
-
-    this.selectedTarget.set(
-      this.houses().find(
-        (house) =>
-          house.code === current.code.replace(current.env!, this.selectedDestination()!.key!)
-      )
-    );
-  }
-
-  startMovingOther(): void {
-    const refData = this.data()!;
-    const current = this.selectedTarget()!;
-    const oldEnv = current.ref.EnvironmentKey;
-    const newEnv = this.selectedDestination()!.ref.DictionaryKey;
-
-    // 改卡
-    current.ref.EnvironmentKey = newEnv;
-    console.log('changed: ', oldEnv, '→', current.ref.EnvironmentKey);
-
-    this.data.update(() => ({ ...refData }));
-
-    this.selectedTarget.set(
-      this.houses().find(
-        (house) =>
-          house.code === current.code.replace(current.env!, this.selectedDestination()!.key!)
-      )
-    );
-  }
-
-  private moveHouseEnv(): void {
-    const refData = this.data()!;
-    const current = this.selectedTarget()!;
-    const oldEnv = current.ref.EnvironmentKey;
-    const newEnv = this.selectedDestination()!.ref.DictionaryKey;
-
     // 找房间ID
     const keyword =
       'StartingPoint' +
@@ -243,6 +212,20 @@ export class App {
         rps.new.replace(/\(.+?\)/g, '')
       );
     });
+
+    this.tick.update((t) => !t);
+  }
+
+  startMovingOther(): void {
+    const current = this.selectedTarget()!;
+    const oldEnv = current.ref.EnvironmentKey;
+    const newEnv = this.selectedDestination()!.ref.DictionaryKey;
+
+    // 改卡
+    current.ref.EnvironmentKey = newEnv;
+    console.log('changed: ', oldEnv, '→', current.ref.EnvironmentKey);
+
+    this.tick.update((t) => !t);
   }
 
   private replaceAllData(data: Record<string, any>, r1: string, r2: string): void {

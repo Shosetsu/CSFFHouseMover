@@ -64,7 +64,7 @@
         <mat-form-field class="house-select" appearance="outline">
           <mat-label>存档中存在的房子</mat-label>
           <mat-select [(value)]="selectedTarget" placeholder="请选择要搬迁的房子">
-            @for(code of houses();track code.ref){
+            @for(code of targetList();track code.ref){
             <mat-option [value]="code"> {{ code.label }}@if(code.current){（当前）} </mat-option>
             }
           </mat-select>
