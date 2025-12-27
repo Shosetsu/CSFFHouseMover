@@ -6,16 +6,8 @@ import { MatCheckbox } from '@angular/material/checkbox';
 import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatOption, MatSelect } from '@angular/material/select';
-import { LOCATIONS } from './const/const';
-import { Card, EnvCard, SaveData } from './const/types';
-
-type Code<T extends Card> = {
-  label: string;
-  key?: string;
-  ref: T;
-  env?: string;
-  current?: boolean;
-};
+import { LOCATIONS } from './app.config';
+import { Card, EnvCard, MoverOption, SaveData } from './app.interface';
 
 @Component({
   selector: 'app-root',
@@ -34,25 +26,41 @@ type Code<T extends Card> = {
   styleUrl: './app.scss',
 })
 export class App {
-  selectedTarget = signal<Code<Card> | undefined>(undefined);
-  selectedDestination = signal<Code<EnvCard> | undefined>(undefined);
+  /** 选中的目标卡片选项 */
+  selectedTarget = signal<MoverOption<Card> | undefined>(undefined);
+  /** 选中的目标环境卡片选项 */
+  selectedDestination = signal<MoverOption<EnvCard> | undefined>(undefined);
 
+  /** 保存文件的名称 */
   saveFileName = '';
+  /** 游戏存档数据 */
   data = signal<SaveData | undefined>(undefined);
 
+  /** 当前环境卡片 */
   private currentEnv?: EnvCard;
 
+  /** 是否为非房屋类型卡片的标记 */
   notHouse = signal(false);
-  targetKey = signal('f853a0a8ad6c64c4b81eabb8367c0c5c(GardenPlot)');
+  /** 目标卡片的键值 */
+  targetKey = signal('GardenPlot');
+  /** 预设可选的目标键值集合 */
   keysets = [
-    { value: 'f853a0a8ad6c64c4b81eabb8367c0c5c(GardenPlot)', label: '菜园' },
-    { value: '536f722edbb5e9e4b959b1f3ad25f648(RainCistern)', label: '雨水窖' },
-    { value: '5a3586eda3d3bca49bef4e3cab7b28e1(TanningPit)', label: '鞣制坑' },
+    { value: 'GardenPlot', label: '菜园' },
+    { value: 'RainCistern', label: '雨水窖' },
+    { value: 'TanningPit', label: '鞣制坑' },
+    { value: 'Trap', label: '各种陷阱' },
+    { value: 'Field', label: '各种大田' },
   ];
 
+  /** 用于触发计算的信号 */
   private tick = signal(false);
 
-  targetList = computed<Code<Card>[]>(() => {
+  /**
+   * 计算目标列表
+   * 根据notHouse标志返回不同类型的卡片列表
+   * @returns MoverOption<Card>[] 目标卡片选项数组
+   */
+  targetList = computed<MoverOption<Card>[]>(() => {
     this.tick();
     if (this.notHouse()) {
       return [
@@ -60,14 +68,14 @@ export class App {
         ...(this.data()?.CurrentCardsData || []),
       ]
         .filter((card) => card.CardID.includes(this.targetKey()) && !card.CardID.includes('Bp_'))
-        .map((card) => {
+        .map<MoverOption<Card>>((card) => {
           const envKey = card.EnvironmentKey.match(/\((.+)\)$/)?.[1];
 
           return {
             code: String(card.CreatedOnTick),
-            label: `${card.CustomName || card.CardID.match(/\((.+)\)/)?.[1] || card.CardID}（${
-              LOCATIONS.find((lo) => lo.key === envKey)?.label
-            }）`,
+            label: `${
+              card.CustomName || card.CardID.match(/\((.+)\)/)?.[1] || card.CardID
+            }（${this.getName(envKey, card.EnvironmentKey)}）`,
             ref: card,
             env: envKey,
             current: this.currentEnv!.CardID === card.EnvironmentKey,
@@ -86,7 +94,7 @@ export class App {
         card.CardID.includes('ConstructionDoorEntranceMain')
       ) ?? []),
     ]
-      .map((card) => {
+      .map<MoverOption<Card>>((card) => {
         const envKey = card.EnvironmentKey.match(/\((.+)\)$/)?.[1];
         const type = {
           'Cabin)': '木屋',
@@ -98,9 +106,9 @@ export class App {
         return {
           label: `${
             card.CustomName || type || card.CardID.match(/\((.+)\)/)?.[1] || card.CardID
-          }（${LOCATIONS.find((lo) => lo.key === envKey)?.label}）`,
+          }（${this.getName(envKey)}）`,
           ref: card,
-          key: type,
+          type: type,
           env: envKey,
           current: this.currentEnv!.CardID === card.EnvironmentKey,
         };
@@ -108,6 +116,10 @@ export class App {
       .filter((env) => env.label);
   });
 
+  /**
+   * 目标列表变化时的副作用
+   * 当目标列表变化时，自动更新选中的目标
+   */
   targetListEffect = effect(() => {
     this.selectedTarget.set(
       this.targetList().find(
@@ -116,20 +128,29 @@ export class App {
     );
   });
 
-  availableLocations = computed<Code<EnvCard>[]>(() =>
+  /**
+   * 计算可用位置列表
+   * @returns MoverOption<EnvCard>[] 可用环境卡片选项数组
+   */
+  availableLocations = computed<MoverOption<EnvCard>[]>(() =>
     (
-      this.data()?.EnvironmentsData.map((env) => {
-        const [key, name] = env.DictionaryKey.slice(0, env.DictionaryKey.length - 1).split('(');
+      this.data()?.EnvironmentsData.map<MoverOption<EnvCard>>((envCard) => {
+        const name = envCard.DictionaryKey.slice(0, envCard.DictionaryKey.length - 1).split('(')[1];
         return {
-          key: name,
-          label: LOCATIONS.find((lo) => lo.key === name)?.label ?? '',
-          ref: env,
-          current: this.currentEnv!.CardID === env.DictionaryKey,
+          env: name,
+          label: this.getName(name, name),
+          ref: envCard,
+          current: this.currentEnv!.CardID === envCard.DictionaryKey,
         };
       }) ?? []
     ).filter((env) => env.label)
   );
 
+  /**
+   * 处理文件选择事件
+   * 读取并解析选中的存档文件
+   * @param file HTML文件输入元素
+   */
   async onFileSelected(file: HTMLInputElement): Promise<void> {
     this.saveFileName = file.files?.[0].name ?? '';
     this.data.set(JSON.parse((await file.files?.[0].text()) ?? ''));
@@ -137,6 +158,10 @@ export class App {
     this.selectedTarget.set(this.targetList()[0]);
   }
 
+  /**
+   * 开始移动卡片
+   * 将选中的卡片从一个环境移动到另一个环境
+   */
   startMoving(): void {
     const refData = this.data()!;
     const current = this.selectedTarget()!;
@@ -185,7 +210,7 @@ export class App {
         地窖: 'Cellar',
         泥屋: 'MudHut',
         畜栏: 'Enclosure',
-      }[current.key as string];
+      }[current.type as string];
 
     const rpList = refData.EnvironmentsData.filter(
       (env) =>
@@ -216,6 +241,10 @@ export class App {
     this.tick.update((t) => !t);
   }
 
+  /**
+   * 开始移动其他卡片
+   * 只更新卡片的环境键值，不进行完整的移动逻辑
+   */
   startMovingOther(): void {
     const current = this.selectedTarget()!;
     const oldEnv = current.ref.EnvironmentKey;
@@ -228,6 +257,28 @@ export class App {
     this.tick.update((t) => !t);
   }
 
+  /**
+   * 根据键值获取位置名称
+   * 从LOCATIONS常量中查找对应键值的位置标签，如果找不到则返回默认值
+   * 在查找前会移除键值末尾的Q、E、W字符
+   * @param key 位置键值，可选参数
+   * @param defaultValue 当找不到对应位置时的默认返回值，默认为空字符串
+   * @returns 对应的位置名称或默认值
+   */
+  private getName(key?: string, defaultValue = ''): string {
+    return (
+      (key && LOCATIONS.find((loc) => loc.key === key.replace(/(Q|E|W)+$/g, ''))?.label) ??
+      defaultValue
+    );
+  }
+
+  /**
+   * 替换数据中的所有匹配项
+   * 递归替换对象中所有包含r1的字符串为r2
+   * @param data 要处理的数据对象
+   * @param r1 原始字符串
+   * @param r2 替换字符串
+   */
   private replaceAllData(data: Record<string, any>, r1: string, r2: string): void {
     console.log('changing: ', r1, '→', r2);
     Object.keys(data).forEach(
@@ -235,6 +286,10 @@ export class App {
     );
   }
 
+  /**
+   * 保存存档文件
+   * 将当前数据导出为JSON文件并触发下载
+   */
   saveArchive(): void {
     const jsonString = JSON.stringify(this.data());
     const blob = new Blob([jsonString], { type: 'application/json' });
