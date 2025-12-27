@@ -53,23 +53,24 @@ export class App {
 
   houses = computed<Code<Card>[]>(() => {
     if (this.notHouse()) {
-      return (
-        this.data()?.CurrentInventoryCards.filter((card) =>
-          card.CardID.includes(this.targetKey())
-        ) ?? []
-      ).map((card) => {
-        const envKey = card.EnvironmentKey.match(/\((.+)\)$/)?.[1];
+      return [
+        ...(this.data()?.CurrentInventoryCards || []),
+        ...(this.data()?.CurrentCardsData || []),
+      ]
+        .filter((card) => card.CardID.includes(this.targetKey()) && !card.CardID.includes('Bp_'))
+        .map((card) => {
+          const envKey = card.EnvironmentKey.match(/\((.+)\)$/)?.[1];
 
-        return {
-          code: String(card.CreatedOnTick),
-          label: `${card.CustomName || card.CardID.match(/\((.+)\)/)?.[1] || card.CardID}（${
-            LOCATIONS.find((lo) => lo.key === envKey)?.label
-          }）`,
-          ref: card,
-          env: envKey,
-          current: this.currentEnv!.CardID === card.EnvironmentKey,
-        };
-      });
+          return {
+            code: String(card.CreatedOnTick),
+            label: `${card.CustomName || card.CardID.match(/\((.+)\)/)?.[1] || card.CardID}（${
+              LOCATIONS.find((lo) => lo.key === envKey)?.label
+            }）`,
+            ref: card,
+            env: envKey,
+            current: this.currentEnv!.CardID === card.EnvironmentKey,
+          };
+        });
     }
     return [
       ...(this.data()
@@ -187,18 +188,9 @@ export class App {
     const oldEnv = current.ref.EnvironmentKey;
     const newEnv = this.selectedDestination()!.ref.DictionaryKey;
 
-    // 先改卡
+    // 改卡
     current.ref.EnvironmentKey = newEnv;
     console.log('changed: ', oldEnv, '→', current.ref.EnvironmentKey);
-
-    // 删掉旧卡
-    refData.CurrentInventoryCards.splice(
-      refData.CurrentInventoryCards.findIndex((card) => card === current.ref),
-      1
-    );
-
-    // 添加新卡
-    refData.CurrentInventoryCards.push(current.ref);
 
     this.data.update(() => ({ ...refData }));
 
