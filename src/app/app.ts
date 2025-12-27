@@ -54,11 +54,14 @@ export class App {
             'Cabin)': '木屋',
             'ellar)': '地窖',
             'udHut)': '泥屋',
+            'osure)': '畜栏',
           }[card.CardID.slice(-6) as string];
 
           return {
             code: envKey + card.CardID,
-            label: `${type}（${LOCATIONS.find((lo) => lo.key === envKey)?.label}）`,
+            label: `${card.CustomName || type}（${
+              LOCATIONS.find((lo) => lo.key === envKey)?.label
+            }）`,
             ref: card,
             key: type,
             env: envKey,
@@ -98,6 +101,7 @@ export class App {
         木屋: 'Cabin',
         地窖: 'Cellar',
         泥屋: 'MudHut',
+        畜栏: 'Enclosure',
       }[current.key as string];
 
     const rpList = (this.data.EnvironmentsData as any[])

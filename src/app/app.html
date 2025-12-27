@@ -3,7 +3,7 @@
     <h1>卡牌生存：奇幻森林 存档搬家工具</h1>
 
     <label class="empty-state">
-      <img class="svg-icon" src="file-upload.svg" />
+      <img class="svg-icon" [src]="(data ? 'update' : 'upload') + '.svg'" />
       <p>
         {{
           data
