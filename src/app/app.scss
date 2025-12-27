@@ -10,7 +10,7 @@ h1 {
   margin-bottom: 8px;
 }
 
-.empty-state {
+.file-area {
   display: grid;
   justify-items: center;
   padding: 40px 20px;
@@ -28,6 +28,7 @@ h1 {
 }
 
 .selection-area {
+  margin-top: 30px;
   padding: 20px;
   border: 2px solid #ccc;
   border-radius: 20px;
@@ -40,6 +41,7 @@ h1 {
   margin-bottom: 24px;
 }
 
+.keyword-select,
 .house-select,
 .destination-select {
   flex: 1;

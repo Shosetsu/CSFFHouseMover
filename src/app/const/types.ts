@@ -2,7 +2,9 @@ export interface SaveData {
   CurrentEnvironmentCard: EnvCard;
   EnvironmentsData: EnvCard[];
   CurrentCardsData: Card[];
+  CurrentInventoryCards: Card[];
 }
+
 export interface Card {
   CardID: string;
   NPCID: string;

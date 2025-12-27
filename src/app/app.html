@@ -2,7 +2,7 @@
   <div class="content">
     <h1>卡牌生存：奇幻森林 存档搬家工具</h1>
 
-    <label class="empty-state">
+    <label class="file-area">
       <img class="svg-icon" [src]="(data() ? 'update' : 'upload') + '.svg'" />
       <p>
         {{
@@ -20,13 +20,50 @@
       <input #save hidden type="file" accept=".json" (change)="onFileSelected(save)" />
     </label>
 
+    <!-- 高级选项区域 -->
+    <div class="selection-area">
+      <div class="select-pair">
+        <!-- 开关 -->
+        <label>
+          <mat-checkbox
+            [value]="notHouse() ? 'checked' : ''"
+            (change)="notHouse.set(!notHouse())"
+            [disabled]="!data()"
+          >
+            <span>是否打开高级搬迁功能</span>
+          </mat-checkbox>
+        </label>
+
+        <!-- 关键字 -->
+        @if(notHouse()){
+        <mat-form-field class="keyword-select" appearance="outline">
+          <mat-label>要搬什么？</mat-label>
+          <input
+            matInput
+            type="text"
+            [(ngModel)]="targetKey"
+            [matAutocomplete]="auto"
+            placeholder="请输入或选择要搬东西的key"
+          />
+          <mat-autocomplete #auto="matAutocomplete">
+            @for(key of keysets;track key.value){
+            <mat-option [value]="key.value">
+              <span>{{ key.label }}</span>
+            </mat-option>
+            }
+          </mat-autocomplete>
+        </mat-form-field>
+        }
+      </div>
+    </div>
+
     <!-- 房子选择区域 -->
     <div class="selection-area">
       <div class="select-pair">
         <!-- 存档中存在的房子 -->
         <mat-form-field class="house-select" appearance="outline">
           <mat-label>存档中存在的房子</mat-label>
-          <mat-select [(value)]="selectedHouse" placeholder="请选择要搬迁的房子">
+          <mat-select [(value)]="selectedTarget" placeholder="请选择要搬迁的房子">
             @for(code of houses();track code.ref){
             <mat-option [value]="code"> {{ code.label }}@if(code.current){（当前）} </mat-option>
             }
@@ -38,7 +75,7 @@
           <mat-label>搬迁至→</mat-label>
           <mat-select [(value)]="selectedDestination" placeholder="请选择新位置">
             @for(code of availableLocations();track code.ref){
-            <mat-option [value]="code" [disabled]="code.key === selectedHouse()?.env">
+            <mat-option [value]="code" [disabled]="code.key === selectedTarget()?.env">
               {{ code.label }}@if(code.current){（当前）}
             </mat-option>
             }
@@ -48,16 +85,29 @@
 
       <!-- 操作按钮 -->
       <div class="button-group">
+        @if(notHouse()){
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="startMovingOther()"
+          [disabled]="!selectedTarget() || !selectedDestination()"
+          class="action-btn"
+        >
+          <img class="svg-icon" src="pin-location.svg" />
+          <span>开始搬…</span>
+        </button>
+        }@else{
         <button
           mat-raised-button
           color="primary"
           (click)="startMoving()"
-          [disabled]="!selectedHouse() || !selectedDestination()"
+          [disabled]="!selectedTarget() || !selectedDestination()"
           class="action-btn"
         >
           <img class="svg-icon" src="pin-location.svg" />
           <span>开始搬家</span>
         </button>
+        }
         <button
           mat-raised-button
           color="accent"
