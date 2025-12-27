@@ -1,14 +1,15 @@
-import { Component, signal } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatOption, MatSelect } from '@angular/material/select';
 import { LOCATIONS } from './const/const';
 import { MatButton } from '@angular/material/button';
+import { Card, EnvCard, SaveData } from './const/types';
 
 type Code = {
   code: string;
   label: string;
   key?: string;
-  ref?: any;
+  ref: Card | EnvCard;
   env?: string;
   current?: boolean;
 };
@@ -23,90 +24,109 @@ export class App {
   selectedHouse = signal<Code | undefined>(undefined);
   selectedDestination = signal<Code | undefined>(undefined);
 
-  houses = signal<Code[]>([]);
-  availableLocations = signal<Code[]>([]);
-
   saveFileName = '';
-  data: any;
+  data = signal<SaveData | undefined>(undefined);
 
-  private currentEnv: any;
+  private currentEnv?: EnvCard;
+
+  houses = computed<Code[]>(() =>
+    [
+      ...(this.data()
+        ?.EnvironmentsData.flatMap((env) => env.AllRegularCards)
+        .filter(
+          (card) =>
+            card.CardID.includes('ConstructionDoorEntranceMain') &&
+            this.currentEnv!.CardID !== card.EnvironmentKey
+        ) ?? []),
+      ...(this.data()?.CurrentCardsData.filter((card) =>
+        card.CardID.includes('ConstructionDoorEntranceMain')
+      ) ?? []),
+    ]
+      .map((card) => {
+        const envKey = card.EnvironmentKey.match(/\((.+)\)$/)?.[1];
+        const type = {
+          'Cabin)': '木屋',
+          'ellar)': '地窖',
+          'udHut)': '泥屋',
+          'osure)': '畜栏',
+        }[card.CardID.slice(-6) as string];
+
+        return {
+          code: envKey + card.CardID,
+          label: `${card.CustomName || type}（${
+            LOCATIONS.find((lo) => lo.key === envKey)?.label
+          }）`,
+          ref: card,
+          key: type,
+          env: envKey,
+          current: this.currentEnv!.CardID === card.EnvironmentKey,
+        };
+      })
+      .filter((env) => env.label)
+  );
+
+  availableLocations = computed<Code[]>(() =>
+    (
+      this.data()?.EnvironmentsData.map((env) => {
+        const [key, name] = env.DictionaryKey.slice(0, env.DictionaryKey.length - 1).split('(');
+        return {
+          code: key,
+          key: name,
+          label: LOCATIONS.find((lo) => lo.key === name)?.label ?? '',
+          ref: env,
+          current: this.currentEnv!.CardID === env.DictionaryKey,
+        };
+      }) ?? []
+    ).filter((env) => env.label)
+  );
 
   async onFileSelected(file: HTMLInputElement): Promise<void> {
     this.saveFileName = file.files?.[0].name ?? '';
-    this.data = JSON.parse((await file.files?.[0].text()) ?? '');
-    this.currentEnv = this.data.CurrentEnvironmentCard;
-
-    this.setData();
+    this.data.set(JSON.parse((await file.files?.[0].text()) ?? ''));
+    this.currentEnv = this.data()?.CurrentEnvironmentCard;
     this.selectedHouse.set(this.houses()[0]);
-  }
-
-  private setData(): void {
-    this.availableLocations.set(
-      (this.data.EnvironmentsData as any[])
-        .map((env) => {
-          const [key, name] = env.DictionaryKey.slice(0, env.DictionaryKey.length - 1).split('(');
-          return {
-            code: key,
-            key: name,
-            label: LOCATIONS.find((lo) => lo.key === name)?.label ?? '',
-            ref: env,
-            current: this.currentEnv.CardID === env.DictionaryKey,
-          };
-        })
-        .filter((env) => env.label)
-    );
-
-    this.houses.set(
-      (this.data.EnvironmentsData as any[])
-        .flatMap((env) => env.AllRegularCards as any[])
-        .filter((card) => card.CardID.includes('ConstructionDoorEntranceMain'))
-        .map((card) => {
-          const envKey = card.EnvironmentKey.match(/\((.+)\)$/)[1];
-          const type = {
-            'Cabin)': '木屋',
-            'ellar)': '地窖',
-            'udHut)': '泥屋',
-            'osure)': '畜栏',
-          }[card.CardID.slice(-6) as string];
-
-          return {
-            code: envKey + card.CardID,
-            label: `${card.CustomName || type}（${
-              LOCATIONS.find((lo) => lo.key === envKey)?.label
-            }）`,
-            ref: card,
-            key: type,
-            env: envKey,
-            current: this.currentEnv.CardID === card.EnvironmentKey,
-          };
-        })
-        .filter((env) => env.label)
-    );
   }
 
   startMoving(): void {
     const current = this.selectedHouse()!;
     const oldEnv = current.ref.EnvironmentKey;
-    const newEnv = this.selectedDestination()?.ref.DictionaryKey;
+    const newEnv = (this.selectedDestination()?.ref as EnvCard).DictionaryKey;
+
+    const refData = this.data()!;
 
     // 先搬进屋卡
     current.ref.EnvironmentKey = newEnv;
     console.log('changed: ', oldEnv, current.ref.EnvironmentKey);
 
     // 删掉旧进屋卡
-    const oldEnvRegulars = (this.data.EnvironmentsData as any[]).find(
-      (env) => env.DictionaryKey === oldEnv
-    ).AllRegularCards as any[];
-    oldEnvRegulars.splice(
-      oldEnvRegulars.findIndex((card) => card === current.ref),
-      1
-    );
+    if (current.current) {
+      // 如果在当前区域
+      refData.CurrentCardsData.splice(
+        this.data()!.CurrentCardsData.findIndex((card) => card === current.ref),
+        1
+      );
+    } else {
+      // 反之不在
+      const oldEnvRegulars = refData.EnvironmentsData.find(
+        (env) => env.DictionaryKey === oldEnv
+      )!.AllRegularCards;
+      oldEnvRegulars.splice(
+        oldEnvRegulars.findIndex((card) => card === current.ref),
+        1
+      );
+    }
 
     // 添加新进屋卡
-    const newEnvRegulars = (this.data.EnvironmentsData as any[]).find(
-      (env) => env.DictionaryKey === newEnv
-    ).AllRegularCards as any[];
-    newEnvRegulars.push(current.ref);
+    if (this.selectedDestination()!.current) {
+      // 如果在当前区域
+      refData.CurrentCardsData.push(current.ref);
+    } else {
+      // 反之不在
+      const newEnvRegulars = refData.EnvironmentsData.find(
+        (env) => env.DictionaryKey === newEnv
+      )!.AllRegularCards;
+      newEnvRegulars.push(current.ref);
+    }
 
     // 找房间ID
     const keyword =
@@ -118,36 +138,33 @@ export class App {
         畜栏: 'Enclosure',
       }[current.key as string];
 
-    const rpList = (this.data.EnvironmentsData as any[])
-      .filter(
-        (env) =>
-          env.DictionaryKey.includes(keyword) &&
-          env.DictionaryKey.includes(
-            current.env + (current.ref.TravelCardIndex ? ')=' + current.ref.TravelCardIndex : '')
+    const rpList = refData.EnvironmentsData.filter(
+      (env) =>
+        env.DictionaryKey.includes(keyword) &&
+        env.DictionaryKey.match(
+          new RegExp(
+            current.env +
+              '\\)' +
+              (current.ref.TravelCardIndex ? `=${current.ref.TravelCardIndex}` : '') +
+              '($|_)'
           )
-      )
-      .map((env) => ({
-        old: env.DictionaryKey,
-        new: env.DictionaryKey.replaceAll(oldEnv, newEnv),
-      }));
+        )
+    ).map((env) => ({
+      old: env.DictionaryKey,
+      new: env.DictionaryKey.replaceAll(oldEnv, newEnv),
+    }));
 
     // 完全替换
     rpList.forEach((rps) => {
-      console.log('changing: ', rps.old, '→', rps.new);
-      this.replaceAllData(this.data, rps.old, rps.new);
-      console.log(
-        'changing: ',
-        rps.old.replace(/\(.+?\)/g, ''),
-        '→',
-        rps.new.replace(/\(.+?\)/g, '')
-      );
+      this.replaceAllData(refData, rps.old, rps.new);
       this.replaceAllData(
-        this.data,
+        refData,
         rps.old.replace(/\(.+?\)/g, ''),
         rps.new.replace(/\(.+?\)/g, '')
       );
     });
-    this.setData();
+
+    this.data.update(() => ({ ...refData }));
 
     this.selectedHouse.set(
       this.houses().find(
@@ -158,13 +175,14 @@ export class App {
   }
 
   private replaceAllData(data: Record<string, any>, r1: string, r2: string): void {
+    console.log('changing: ', r1, '→', r2);
     Object.keys(data).forEach(
       (key) => (data[key] = JSON.parse(JSON.stringify(data[key]).replaceAll(r1, r2)))
     );
   }
 
   saveArchive(): void {
-    const jsonString = JSON.stringify(this.data);
+    const jsonString = JSON.stringify(this.data());
     const blob = new Blob([jsonString], { type: 'application/json' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);

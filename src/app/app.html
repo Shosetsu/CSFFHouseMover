@@ -3,10 +3,10 @@
     <h1>卡牌生存：奇幻森林 存档搬家工具</h1>
 
     <label class="empty-state">
-      <img class="svg-icon" [src]="(data ? 'update' : 'upload') + '.svg'" />
+      <img class="svg-icon" [src]="(data() ? 'update' : 'upload') + '.svg'" />
       <p>
         {{
-          data
+          data()
             ? '正在修改' + saveFileName + '，要更换一个存档吗？'
             : '请先选择一个存档文件以开始编辑'
         }}
@@ -27,8 +27,8 @@
         <mat-form-field class="house-select" appearance="outline">
           <mat-label>存档中存在的房子</mat-label>
           <mat-select [(value)]="selectedHouse" placeholder="请选择要搬迁的房子">
-            @for(code of houses();track code.code){
-            <mat-option [value]="code">{{ code.label }}@if(code.current){（当前）}</mat-option>
+            @for(code of houses();track code.ref){
+            <mat-option [value]="code"> {{ code.label }}@if(code.current){（当前）} </mat-option>
             }
           </mat-select>
         </mat-form-field>
@@ -37,11 +37,8 @@
         <mat-form-field class="destination-select" appearance="outline">
           <mat-label>搬迁至→</mat-label>
           <mat-select [(value)]="selectedDestination" placeholder="请选择新位置">
-            @for(code of availableLocations();track code.code){
-            <mat-option
-              [value]="code"
-              [disabled]="code.key === selectedHouse()?.env || code.current"
-            >
+            @for(code of availableLocations();track code.ref){
+            <mat-option [value]="code" [disabled]="code.key === selectedHouse()?.env">
               {{ code.label }}@if(code.current){（当前）}
             </mat-option>
             }
