@@ -1,8 +1,6 @@
 import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
 
-export const appConfig: ApplicationConfig = {
-  providers: [provideBrowserGlobalErrorListeners()],
-};
+export const appConfig: ApplicationConfig = { providers: [provideBrowserGlobalErrorListeners()] };
 
 export const LOCATIONS = [
   { key: 'Env_ClearingOak_GreenGlade', label: '绿野空地' },
@@ -74,4 +72,40 @@ export const LOCATIONS = [
   { key: 'Env_ThicketPine_PineSlopes', label: '松林坡地' },
   { key: 'Env_ThicketPine_ShadyPines', label: '浓荫松林' },
   { key: 'Env_ThicketPine_WesternWildWoods', label: '西部荒林' },
+
+  { key: 'Env_FmFlintSett', label: '【下】燧石巢穴' },
+  { key: 'Env_FmCollapsedTunnel', label: '【下】坍塌的隧道' },
+  { key: 'Env_FmDarkTunnelNorthEast', label: '【下】黑暗隧道' },
+  { key: 'Env_FmDarkTunnelNorthWest', label: '【下】黑暗隧道' },
+  { key: 'Env_FmDarkTunnelSouthEast', label: '【下】黑暗隧道' },
+  { key: 'Env_FmDarkTunnelSouthWest', label: '【下】黑暗隧道' },
+  { key: 'Env_FmDarkTunnelWest', label: '【下】黑暗隧道' },
+  { key: 'Env_FmFlintClawsChamber', label: '【下】燧爪的巢穴' },
+  { key: 'Env_FmFloodedTunnel', label: '【下】覆溺隧道' },
+  { key: 'Env_FmNorthernChamber', label: '【下】北部洞穴' },
+  { key: 'Env_FmNorthernTunnel', label: '【下】北部隧道' },
+  { key: 'Env_FmOminousTunnel', label: '【下】不祥隧道' },
+  { key: 'Env_FmOvergrownTunnel', label: '【下】藤蔓覆盖的隧道' },
+  { key: 'Env_FmSouthernTunnel', label: '【下】南部隧道' },
+  { key: 'Env_FmTheShaft', label: '【下】竖井' },
+  { key: 'Env_DeathCrack_DeathChamber', label: '【洞】死亡洞室' },
+  { key: 'Env_DeathCrack_EntranceTunnel', label: '【洞】入口隧洞' },
+  { key: 'Env_DeathCrack_OuterChamber', label: '【洞】外厅洞室' },
+
+  { key: 'Env_WaterfallCaves', label: '【洞】瀑布洞穴' },
+  { key: 'Env_BearCave', label: '【洞】熊洞' },
+  { key: 'Env_WolfCave', label: '【洞】狼穴' },
+  { key: 'Env_Cave', label: '【洞】松坡洞穴' },
+
+  { key: 'Env_SpiritWorld', label: '【无】精魄界' },
+
+  { key: 'Env_CabinConstructionStartingPointCabin', label: '某木屋入口' },
+  { key: 'Env_MudHutConstructionStartingPointMudHut', label: '某泥屋入口' },
+  { key: 'Env_MudHutConstructionStartingPointCellar', label: '某地窖入口' },
+  { key: 'Env_MudHutConstructionStartingPointEnclosure', label: '某畜栏入口' },
+  { key: 'Env_CabinConstructionLocationCabinRoom', label: '某木质房间' },
+  { key: 'Env_CabinConstructionLocationAttic', label: '某阁楼' },
+  { key: 'Env_MudHutConstructionLocationRoom', label: '某泥质房间' },
+  { key: 'Env_MudHutConstructionLocationCellar', label: '某地窖' },
+  { key: 'Env_MudHutConstructionLocationEnclosure', label: '某畜栏' },
 ];

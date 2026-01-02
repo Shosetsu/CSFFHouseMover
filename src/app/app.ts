@@ -69,13 +69,13 @@ export class App {
       ]
         .filter((card) => card.CardID.includes(this.targetKey()) && !card.CardID.includes('Bp_'))
         .map<MoverOption<Card>>((card) => {
-          const envKey = card.EnvironmentKey.match(/\((.+)\)$/)?.[1];
+          const envKey = card.EnvironmentKey.match(/(?<=\().+?(?=\))/g)?.join('⇔');
 
           return {
             code: String(card.CreatedOnTick),
             label: `${
-              card.CustomName || card.CardID.match(/\((.+)\)/)?.[1] || card.CardID
-            }（${this.getName(envKey, card.EnvironmentKey)}）`,
+              card.CustomName || card.CardID.match(/(?<=\().+?(?=\))/g)?.join('') || card.CardID
+            }（${this.getName(envKey)}）`,
             ref: card,
             env: envKey,
             current: this.currentEnv!.CardID === card.EnvironmentKey,
@@ -135,10 +135,10 @@ export class App {
   availableLocations = computed<MoverOption<EnvCard>[]>(() =>
     (
       this.data()?.EnvironmentsData.map<MoverOption<EnvCard>>((envCard) => {
-        const name = envCard.DictionaryKey.slice(0, envCard.DictionaryKey.length - 1).split('(')[1];
+        const name = envCard.DictionaryKey.match(/(?<=\().+?(?=\))/g)?.join('⇔');
         return {
           env: name,
-          label: this.getName(name, name),
+          label: this.getName(name),
           ref: envCard,
           current: this.currentEnv!.CardID === envCard.DictionaryKey,
         };
@@ -292,13 +292,14 @@ export class App {
    * 从LOCATIONS常量中查找对应键值的位置标签，如果找不到则返回默认值
    * 在查找前会移除键值末尾的Q、E、W字符
    * @param key 位置键值，可选参数
-   * @param defaultValue 当找不到对应位置时的默认返回值，默认为空字符串
    * @returns 对应的位置名称或默认值
    */
-  private getName(key?: string, defaultValue = ''): string {
+  private getName(key?: string): string {
     return (
-      (key && LOCATIONS.find((loc) => loc.key === key.replace(/(Q|E|W)+$/g, ''))?.label) ??
-      defaultValue
+      key
+        ?.split('⇔')
+        .map((k) => LOCATIONS.find((loc) => loc.key === k.replace(/(Q|E|W)+$/g, ''))?.label ?? k)
+        .join('⇔') ?? ''
     );
   }
 }
