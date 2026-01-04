@@ -52,16 +52,12 @@ export class App {
     { value: 'Field', label: '各种大田' },
   ];
 
-  /** 用于触发计算的信号 */
-  private tick = signal(false);
-
   /**
    * 计算目标列表
    * 根据notHouse标志返回不同类型的卡片列表
    * @returns MoverOption<Card>[] 目标卡片选项数组
    */
   targetList = computed<MoverOption<Card>[]>(() => {
-    this.tick();
     if (this.notHouse()) {
       return [
         ...(this.data()?.CurrentInventoryCards || []),
@@ -175,7 +171,7 @@ export class App {
 
     // 更新入口卡片
     current.ref.EnvironmentKey = newEnv;
-    console.log('changed: ', oldEnv, '→', current.ref.EnvironmentKey);
+    console.log(`修改卡片[${current.ref.CardID}]: ${oldEnv} → ${current.ref.EnvironmentKey}`);
 
     // 删掉旧入口
     if (current.current) {
@@ -218,6 +214,9 @@ export class App {
       }[current.type!];
 
     // 完全替换
+    let modifyData = JSON.stringify(refData);
+
+    // 逐条
     refData.EnvironmentsData.filter(
       (env) =>
         env.DictionaryKey.includes(keyword) &&
@@ -232,25 +231,17 @@ export class App {
     ).forEach((env) => {
       const oldKey = env.DictionaryKey;
       const newKey = env.DictionaryKey.replaceAll(oldEnv, newEnv);
-      this.replaceAllData(refData, oldKey, newKey);
-      this.replaceAllData(refData, oldKey.replace(/\(.+?\)/g, ''), newKey.replace(/\(.+?\)/g, ''));
+      console.log(`修改场景: ${oldKey} → ${newKey}`);
+
+      modifyData = modifyData.replaceAll(oldKey, newKey);
+      modifyData = modifyData.replaceAll(
+        oldKey.replace(/\(.+?\)/g, ''),
+        newKey.replace(/\(.+?\)/g, '')
+      );
     });
 
-    this.tick.update((t) => !t);
-  }
-
-  /**
-   * 替换数据中的所有匹配项
-   * 递归替换对象中所有包含r1的字符串为r2
-   * @param data 要处理的数据对象
-   * @param r1 原始字符串
-   * @param r2 替换字符串
-   */
-  private replaceAllData(data: SaveData, r1: string, r2: string): void {
-    console.log('changing: ', r1, '→', r2);
-    (Object.keys(data) as (keyof SaveData)[]).forEach(
-      (key) => (data[key] = JSON.parse(JSON.stringify(data[key]).replaceAll(r1, r2)))
-    );
+    // 刷新数据
+    this.data.set(JSON.parse(modifyData));
   }
 
   /**
@@ -264,9 +255,10 @@ export class App {
 
     // 更新卡片
     current.ref.EnvironmentKey = newEnv;
-    console.log('changed: ', oldEnv, '→', current.ref.EnvironmentKey);
+    console.log(`修改卡片[${current.ref.CardID}]: ${oldEnv} → ${current.ref.EnvironmentKey}`);
 
-    this.tick.update((t) => !t);
+    // 刷新数据
+    this.data.update((data) => JSON.parse(JSON.stringify(data)));
   }
 
   /**
