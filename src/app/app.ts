@@ -262,6 +262,19 @@ export class App {
   }
 
   /**
+   * 删除NPCTracks
+   * 减少存档里的垃圾
+   */
+  removeTracks(): void {
+    let count = 0;
+    this.data()?.EnvironmentsData.forEach((envData) => {
+      count += envData.NPCTracks.length;
+      envData.NPCTracks = [];
+    });
+    alert('已删除' + count + '件 NPCTracks');
+  }
+
+  /**
    * 下载修改过的存档文件
    * 将当前数据导出为JSON文件并触发下载
    */

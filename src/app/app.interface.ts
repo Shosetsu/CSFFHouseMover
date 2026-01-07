@@ -73,6 +73,8 @@ export interface EnvCard extends Card {
   DictionaryKey: string;
   /** 所有常规卡片列表 */
   AllRegularCards: Card[];
+  /** NPC追踪对象 */
+  NPCTracks: unknown[];
 }
 
 interface ExplorationResult {

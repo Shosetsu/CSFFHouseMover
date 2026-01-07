@@ -42,7 +42,7 @@
             [matAutocomplete]="auto"
             placeholder="请输入或选择要搬东西的key"
           />
-          <mat-autocomplete #auto="matAutocomplete">
+          <mat-autocomplete #auto>
             @for(key of keysets;track key.value){
             <mat-option [value]="key.value">
               <span>{{ key.label }}</span>
@@ -109,6 +109,15 @@
           <span>开始搬家</span>
         </button>
         }
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="removeTracks()"
+          [disabled]="!saveFileName"
+          class="action-btn"
+        >
+          <span>删除NPCTracks</span>
+        </button>
         <button
           mat-raised-button
           color="accent"
