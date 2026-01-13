@@ -58,14 +58,16 @@ export class App {
    * @returns MoverOption<Card>[] 目标卡片选项数组
    */
   targetList = computed<MoverOption<Card>[]>(() => {
+    const data = this.data();
+    if (!data) {
+      return [];
+    }
     if (this.notHouse()) {
-      return [
-        ...(this.data()?.CurrentInventoryCards || []),
-        ...(this.data()?.CurrentCardsData || []),
-      ]
+      return [...data.CurrentInventoryCards, ...data.CurrentCardsData]
         .filter((card) => card.CardID.includes(this.targetKey()) && !card.CardID.includes('Bp_'))
         .map<MoverOption<Card>>((card) => {
-          const envKey = card.EnvironmentKey.match(/(?<=\().+?(?=\))/g)?.join('⇔');
+          const [envName, ...location] = card.EnvironmentKey.match(/(?<=\().+?(?=\))/g) ?? [];
+          const envKey = [...location, envName].join('→');
 
           return {
             code: String(card.CreatedOnTick),
@@ -79,16 +81,14 @@ export class App {
         });
     }
     return [
-      ...(this.data()
-        ?.EnvironmentsData.flatMap((env) => env.AllRegularCards)
-        .filter(
-          (card) =>
-            card.CardID.includes('ConstructionDoorEntranceMain') &&
-            this.currentEnv!.CardID !== card.EnvironmentKey
-        ) ?? []),
-      ...(this.data()?.CurrentCardsData.filter((card) =>
+      ...data.EnvironmentsData.flatMap((env) => env.AllRegularCards).filter(
+        (card) =>
+          card.CardID.includes('ConstructionDoorEntranceMain') &&
+          this.currentEnv!.CardID !== card.EnvironmentKey
+      ),
+      ...data.CurrentCardsData.filter((card) =>
         card.CardID.includes('ConstructionDoorEntranceMain')
-      ) ?? []),
+      ),
     ]
       .map<MoverOption<Card>>((card) => {
         const envKey = card.EnvironmentKey.match(/\((.+)\)$/)?.[1];
@@ -131,7 +131,8 @@ export class App {
   availableLocations = computed<MoverOption<EnvCard>[]>(() =>
     (
       this.data()?.EnvironmentsData.map<MoverOption<EnvCard>>((envCard) => {
-        const name = envCard.DictionaryKey.match(/(?<=\().+?(?=\))/g)?.join('⇔');
+        const [card, ...location] = envCard.DictionaryKey.match(/(?<=\().+?(?=\))/g) ?? [];
+        const name = [...location, card].join('→');
         return {
           env: name,
           label: this.getName(name),
@@ -302,9 +303,9 @@ export class App {
   private getName(key?: string): string {
     return (
       key
-        ?.split('⇔')
+        ?.split('→')
         .map((k) => LOCATIONS.find((loc) => loc.key === k.replace(/(Q|E|W)+$/g, ''))?.label ?? k)
-        .join('⇔') ?? ''
+        .join('→') ?? ''
     );
   }
 }
