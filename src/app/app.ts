@@ -108,10 +108,10 @@ export class App {
       .map<MoverOption<Card>>((card) => {
         const envKey = card.EnvironmentKey.match(/\((.+)\)$/)?.[1];
         const type = {
-          'Cabin)': '木屋',
-          'ellar)': '地窖',
-          'udHut)': '泥屋',
-          'osure)': '畜栏',
+          'Cabin)': this.translate.t('houseTypes.cabin', '木屋'),
+          'ellar)': this.translate.t('houseTypes.cellar', '地窖'),
+          'udHut)': this.translate.t('houseTypes.mudHut', '泥屋'),
+          'osure)': this.translate.t('houseTypes.enclosure', '畜栏'),
         }[card.CardID.slice(-6)];
 
         return {
