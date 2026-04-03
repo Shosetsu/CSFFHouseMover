@@ -1,6 +1,22 @@
 <main class="main">
+  <!-- 语言切换按钮 -->
+  <div class="language-switcher">
+    <button mat-raised-button [matMenuTriggerFor]="langMenu" aria-label="Language" class="lang-btn">
+      <img class="lang-icon" src="language.svg" alt="language" />
+      <span class="lang-label">{{ langType === 'zh' ? '中文' : 'EN' }}</span>
+    </button>
+    <mat-menu #langMenu="matMenu">
+      <button mat-menu-item (click)="changeLanguage('zh')" [class.active]="langType === 'zh'">
+        <span>中文</span>
+      </button>
+      <button mat-menu-item (click)="changeLanguage('en')" [class.active]="langType === 'en'">
+        <span>English</span>
+      </button>
+    </mat-menu>
+  </div>
+
   <div class="content">
-    <h1>卡牌生存：奇幻森林 存档搬家工具</h1>
+    <h1>{{ '卡牌生存：奇幻森林 存档搬家工具' | translate: 'title' }}</h1>
 
     <!-- 存档上传区域 -->
     <label class="file-area">
@@ -8,15 +24,18 @@
       <p>
         {{
           saveFileName
-            ? '正在修改' + saveFileName + '，要更换一个存档吗？'
-            : '请先选择一个存档文件以开始编辑'
+            ? ('正在修改' | translate: 'uploading') +
+              saveFileName +
+              ('，要更换一个存档吗？' | translate: 'selectPrompt')
+            : ('请先选择一个存档文件以开始编辑' | translate: 'noFilePrompt')
         }}
       </p>
       <p>
-        存档可以在：<span class="red"
+        {{ '存档可以在：' | translate: 'savePathPrefix'
+        }}<span class="red"
           >%userprofile%\AppData\LocalLow\WinterSpring Games\Card Survival - Fantasy
           Forest\Games\</span
-        >中找到
+        >{{ '中找到' | translate: 'savePathSuffix' }}
       </p>
       <input #save hidden type="file" accept=".json" (change)="selectSaveFile(save)" />
     </label>
@@ -26,30 +45,33 @@
       <div class="select-pair">
         <!-- 开关 -->
         <div>
-          <mat-checkbox [value]="notHouse() ? 'checked' : ''" (change)="notHouse.set(!notHouse())">
-            <span>是否打开高级搬迁功能</span>
+          <mat-checkbox
+            [value]="isAdvancedMode() ? 'checked' : ''"
+            (change)="isAdvancedMode.set(!isAdvancedMode())"
+          >
+            <span>{{ '是否打开高级搬迁功能' | translate: 'advancedMode' }}</span>
           </mat-checkbox>
         </div>
 
         <!-- 关键字 -->
-        @if(notHouse()){
-        <mat-form-field class="keyword-select" appearance="outline">
-          <mat-label>要搬什么？</mat-label>
-          <input
-            matInput
-            type="text"
-            [(ngModel)]="targetKey"
-            [matAutocomplete]="auto"
-            placeholder="请输入或选择要搬东西的key"
-          />
-          <mat-autocomplete #auto>
-            @for(key of keysets;track key.value){
-            <mat-option [value]="key.value">
-              <span>{{ key.label }}</span>
-            </mat-option>
-            }
-          </mat-autocomplete>
-        </mat-form-field>
+        @if (isAdvancedMode()) {
+          <mat-form-field class="keyword-select" appearance="outline">
+            <mat-label>{{ '要搬什么？' | translate: 'moveWhat' }}</mat-label>
+            <input
+              matInput
+              type="text"
+              [(ngModel)]="searchKeyword"
+              [matAutocomplete]="auto"
+              [placeholder]="'请输入或选择要搬东西的key' | translate: 'keywordPlaceholder'"
+            />
+            <mat-autocomplete #auto>
+              @for (key of presetKeywords; track key.value) {
+                <mat-option [value]="key.value">
+                  <span>{{ key.label | translate: key.key }}</span>
+                </mat-option>
+              }
+            </mat-autocomplete>
+          </mat-form-field>
         }
       </div>
     </div>
@@ -59,26 +81,39 @@
       <div class="select-pair">
         <!-- 存档中的... -->
         <mat-form-field class="house-select" appearance="outline">
-          <mat-label>存档中的{{ notHouse() ? targetKey() : '房子' }}</mat-label>
-          <mat-select [(value)]="selectedTarget" placeholder="请选择要搬迁的房子">
-            @for(code of targetList();track code.ref){
-            <mat-option [value]="code">
-              <span>{{ code.label }}</span>
-              @if(code.current){<span>（当前）</span>}
-            </mat-option>
+          <mat-label>
+            {{ '存档中的' | translate: 'inSave'
+            }}{{ isAdvancedMode() ? searchKeyword() : ('房子' | translate: 'house') }}
+          </mat-label>
+          <mat-select
+            [(value)]="selectedTarget"
+            [placeholder]="'请选择要搬迁的房子' | translate: 'selectHouse'"
+          >
+            @for (code of targetList(); track code.ref) {
+              <mat-option [value]="code">
+                <span>{{ code.label }}</span>
+                @if (code.current) {
+                  <span>（{{ '当前' | translate: 'current' }}）</span>
+                }
+              </mat-option>
             }
           </mat-select>
         </mat-form-field>
 
         <!-- 搬迁至 -->
         <mat-form-field class="destination-select" appearance="outline">
-          <mat-label>搬迁至→</mat-label>
-          <mat-select [(value)]="selectedDestination" placeholder="请选择新位置">
-            @for(code of availableLocations();track code.ref){
-            <mat-option [value]="code" [disabled]="code.env === selectedTarget()?.env">
-              <span>{{ code.label }}</span>
-              @if(code.current){<span>（当前）</span>}
-            </mat-option>
+          <mat-label>{{ '搬迁至→' | translate: 'moveTo' }}</mat-label>
+          <mat-select
+            [(value)]="selectedDestination"
+            [placeholder]="'请选择新位置' | translate: 'selectLocation'"
+          >
+            @for (code of availableLocations(); track code.ref) {
+              <mat-option [value]="code" [disabled]="code.env === selectedTarget()?.env">
+                <span>{{ code.label }}</span>
+                @if (code.current) {
+                  <span>（{{ '当前' | translate: 'current' }}）</span>
+                }
+              </mat-option>
             }
           </mat-select>
         </mat-form-field>
@@ -86,28 +121,28 @@
 
       <!-- 操作按钮 -->
       <div class="button-group">
-        @if(notHouse()){
-        <button
-          mat-raised-button
-          color="primary"
-          (click)="moveCard()"
-          [disabled]="!selectedTarget() || !selectedDestination()"
-          class="action-btn"
-        >
-          <img class="svg-icon" src="pin-location.svg" alt="relocate" />
-          <span>开始搬{{ targetKey() }}</span>
-        </button>
-        }@else{
-        <button
-          mat-raised-button
-          color="primary"
-          (click)="moveHouse()"
-          [disabled]="!selectedTarget() || !selectedDestination()"
-          class="action-btn"
-        >
-          <img class="svg-icon" src="pin-location.svg" alt="relocate" />
-          <span>开始搬家</span>
-        </button>
+        @if (isAdvancedMode()) {
+          <button
+            mat-raised-button
+            color="primary"
+            (click)="moveCard()"
+            [disabled]="!selectedTarget() || !selectedDestination()"
+            class="action-btn"
+          >
+            <img class="svg-icon" src="pin-location.svg" alt="relocate" />
+            <span>{{ '开始搬' | translate: 'startMove' }}{{ searchKeyword() }}</span>
+          </button>
+        } @else {
+          <button
+            mat-raised-button
+            color="primary"
+            (click)="moveHouse()"
+            [disabled]="!selectedTarget() || !selectedDestination()"
+            class="action-btn"
+          >
+            <img class="svg-icon" src="pin-location.svg" alt="relocate" />
+            <span>{{ '开始搬家' | translate: 'startMoveHouse' }}</span>
+          </button>
         }
         <button
           mat-raised-button
@@ -116,7 +151,7 @@
           [disabled]="!saveFileName"
           class="action-btn"
         >
-          <span>删除NPCTracks</span>
+          <span>{{ '删除NPCTracks' | translate: 'removeTracks' }}</span>
         </button>
         <button
           mat-raised-button
@@ -126,7 +161,7 @@
           class="action-btn"
         >
           <img class="svg-icon" src="save.svg" alt="save" />
-          <span>保存存档</span>
+          <span>{{ '保存存档' | translate: 'saveGame' }}</span>
         </button>
       </div>
     </div>

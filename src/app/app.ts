@@ -1,17 +1,21 @@
-import { Component, computed, effect, signal } from '@angular/core';
+import { Component, computed, effect, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButton } from '@angular/material/button';
 import { MatCheckbox } from '@angular/material/checkbox';
 import { MatFormField, MatLabel } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatOption, MatSelect } from '@angular/material/select';
 import { LOCATIONS } from './app.config';
 import { Card, EnvCard, MoverOption, SaveData } from './app.interface';
+import { TranslatePipe } from './pipe/translate.pipe';
+import { SupportedLanguage, TranslationService } from './service/translation.service';
 
 @Component({
   selector: 'app-root',
   imports: [
+    TranslatePipe,
     MatFormField,
     MatLabel,
     MatSelect,
@@ -21,11 +25,20 @@ import { Card, EnvCard, MoverOption, SaveData } from './app.interface';
     MatAutocompleteModule,
     MatInput,
     FormsModule,
+    MatMenuModule,
   ],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
 export class App {
+  /** 翻译服务 */
+  private translate = inject(TranslationService);
+
+  /** 当前语言 */
+  get langType(): SupportedLanguage {
+    return this.translate.currentLang();
+  }
+
   /** 选中的目标卡片选项 */
   selectedTarget = signal<MoverOption<Card> | undefined>(undefined);
   /** 选中的目标环境卡片选项 */
@@ -39,17 +52,17 @@ export class App {
   /** 当前环境卡片 */
   private currentEnv?: EnvCard;
 
-  /** 非搬房子模式标识 */
-  notHouse = signal(false);
+  /** 是否启用高级搬迁模式 */
+  isAdvancedMode = signal(false);
   /** 搜索目标卡片的关键字 */
-  targetKey = signal('GardenPlot');
+  searchKeyword = signal('GardenPlot');
   /** 预设的一些关键字 */
-  keysets = [
-    { value: 'GardenPlot', label: '菜园' },
-    { value: 'RainCistern', label: '雨水窖' },
-    { value: 'TanningPit', label: '鞣制坑' },
-    { value: 'Trap', label: '各种陷阱' },
-    { value: 'Field', label: '各种大田' },
+  presetKeywords = [
+    { value: 'GardenPlot', label: '菜园', key: 'keywords.gardenPlot' },
+    { value: 'RainCistern', label: '雨水窖', key: 'keywords.rainCistern' },
+    { value: 'TanningPit', label: '鞣制坑', key: 'keywords.tanningPit' },
+    { value: 'Trap', label: '各种陷阱', key: 'keywords.trap' },
+    { value: 'Field', label: '各种大田', key: 'keywords.field' },
   ];
 
   /**
@@ -62,9 +75,11 @@ export class App {
     if (!data) {
       return [];
     }
-    if (this.notHouse()) {
+    if (this.isAdvancedMode()) {
       return [...data.CurrentInventoryCards, ...data.CurrentCardsData]
-        .filter((card) => card.CardID.includes(this.targetKey()) && !card.CardID.includes('Bp_'))
+        .filter(
+          (card) => card.CardID.includes(this.searchKeyword()) && !card.CardID.includes('Bp_'),
+        )
         .map<MoverOption<Card>>((card) => {
           const [envName, ...location] = card.EnvironmentKey.match(/(?<=\().+?(?=\))/g) ?? [];
           const envKey = [...location, envName].join('→');
@@ -84,10 +99,10 @@ export class App {
       ...data.EnvironmentsData.flatMap((env) => env.AllRegularCards).filter(
         (card) =>
           card.CardID.includes('ConstructionDoorEntranceMain') &&
-          this.currentEnv!.CardID !== card.EnvironmentKey
+          this.currentEnv!.CardID !== card.EnvironmentKey,
       ),
       ...data.CurrentCardsData.filter((card) =>
-        card.CardID.includes('ConstructionDoorEntranceMain')
+        card.CardID.includes('ConstructionDoorEntranceMain'),
       ),
     ]
       .map<MoverOption<Card>>((card) => {
@@ -119,8 +134,8 @@ export class App {
   targetListEffect = effect(() => {
     this.selectedTarget.set(
       this.targetList().find(
-        (target) => JSON.stringify(target.ref) === JSON.stringify(this.selectedTarget()?.ref)
-      ) ?? this.targetList()[0]
+        (target) => JSON.stringify(target.ref) === JSON.stringify(this.selectedTarget()?.ref),
+      ) ?? this.targetList()[0],
     );
   });
 
@@ -140,7 +155,7 @@ export class App {
           current: this.currentEnv!.CardID === envCard.DictionaryKey,
         };
       }) ?? []
-    ).filter((env) => env.label)
+    ).filter((env) => env.label),
   );
 
   /**
@@ -158,6 +173,11 @@ export class App {
       this.saveFileName = '';
       this.data.set(undefined);
     }
+  }
+
+  /** 切换语言 */
+  changeLanguage(lang: SupportedLanguage): void {
+    this.translate.currentLang.set(lang);
   }
 
   /**
@@ -179,16 +199,16 @@ export class App {
       // 如果在当前区域
       refData.CurrentCardsData.splice(
         this.data()!.CurrentCardsData.findIndex((card) => card === current.ref),
-        1
+        1,
       );
     } else {
       // 反之不在
       const oldEnvRegulars = refData.EnvironmentsData.find(
-        (env) => env.DictionaryKey === oldEnv
+        (env) => env.DictionaryKey === oldEnv,
       )!.AllRegularCards;
       oldEnvRegulars.splice(
         oldEnvRegulars.findIndex((card) => card === current.ref),
-        1
+        1,
       );
     }
 
@@ -199,7 +219,7 @@ export class App {
     } else {
       // 反之不在
       const newEnvRegulars = refData.EnvironmentsData.find(
-        (env) => env.DictionaryKey === newEnv
+        (env) => env.DictionaryKey === newEnv,
       )!.AllRegularCards;
       newEnvRegulars.push(current.ref);
     }
@@ -226,9 +246,9 @@ export class App {
             current.env +
               '\\)' +
               (current.ref.TravelCardIndex ? `=${current.ref.TravelCardIndex}` : '') +
-              '($|_)'
-          )
-        )
+              '($|_)',
+          ),
+        ),
     ).forEach((env) => {
       const oldKey = env.DictionaryKey;
       const newKey = env.DictionaryKey.replaceAll(oldEnv, newEnv);
@@ -237,7 +257,7 @@ export class App {
       modifyData = modifyData.replaceAll(oldKey, newKey);
       modifyData = modifyData.replaceAll(
         oldKey.replace(/\(.+?\)/g, ''),
-        newKey.replace(/\(.+?\)/g, '')
+        newKey.replace(/\(.+?\)/g, ''),
       );
     });
 
@@ -272,7 +292,11 @@ export class App {
       count += envData.NPCTracks.length;
       envData.NPCTracks = [];
     });
-    alert('已删除' + count + '件 NPCTracks');
+    alert(
+      this.translate.t('tracksDeleted', '已删除') +
+        count +
+        this.translate.t('tracksItems', '件 NPCTracks'),
+    );
   }
 
   /**
@@ -301,11 +325,11 @@ export class App {
    * @returns 对应的位置名称或默认值
    */
   private getName(key?: string): string {
-    return (
-      key
-        ?.split('→')
-        .map((k) => LOCATIONS.find((loc) => loc.key === k.replace(/(Q|E|W)+$/g, ''))?.label ?? k)
-        .join('→') ?? ''
-    );
+    return this.translate.currentLang() === 'zh'
+      ? (key
+          ?.split('→')
+          .map((k) => LOCATIONS.find((loc) => loc.key === k.replace(/(Q|E|W)+$/g, ''))?.label ?? k)
+          .join('→') ?? '')
+      : key || '';
   }
 }

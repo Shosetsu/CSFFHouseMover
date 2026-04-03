@@ -1,0 +1,37 @@
+{
+  "title": "Card Survival: Fantasy Forest Save Mover",
+  "uploading": "Editing",
+  "selectPrompt": ", want to choose a different save file?",
+  "noFilePrompt": "Please select a save file to start editing",
+  "savePathPrefix": "Save files can be found in: ",
+  "savePathSuffix": "",
+  "savePath": "%userprofile%\\AppData\\LocalLow\\WinterSpring Games\\Card Survival - Fantasy Forest\\Games\\",
+  "advancedMode": "Enable advanced relocation mode",
+  "moveWhat": "What to move?",
+  "keywordPlaceholder": "Enter or select the key of items to move",
+  "inSave": "In save: ",
+  "house": "House",
+  "moveTo": "Move to →",
+  "selectHouse": "Please select the house to relocate",
+  "selectLocation": "Please select a new location",
+  "current": "Current",
+  "startMove": "Start Moving ",
+  "startMoveHouse": "Start Moving House",
+  "removeTracks": "Remove NPCTracks",
+  "saveGame": "Save Game",
+  "tracksDeleted": "Deleted ",
+  "tracksItems": " NPCTracks",
+  "keywords": {
+    "gardenPlot": "Garden Plot",
+    "rainCistern": "Rain Cistern",
+    "tanningPit": "Tanning Pit",
+    "trap": "Traps",
+    "field": "Fields"
+  },
+  "houseTypes": {
+    "cabin": "Cabin",
+    "cellar": "Cellar",
+    "mudHut": "Mud Hut",
+    "enclosure": "Enclosure"
+  }
+}

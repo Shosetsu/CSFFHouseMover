@@ -1,3 +1,30 @@
+.language-switcher {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 1000;
+}
+
+.lang-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 12px;
+  min-width: auto;
+  line-height: 1;
+}
+
+.lang-label {
+  display: flex;
+}
+
+.lang-icon {
+  height: 16px;
+  width: 16px;
+  opacity: 0.8;
+}
+
 .content {
   padding: 24px;
   max-width: 1200px;
