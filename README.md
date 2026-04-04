@@ -1,7 +1,7 @@
 # 卡牌生存：奇幻森林 存档搬家工具
 
-[![zh](https://img.shields.io/badge/lang-zh-red.svg)](https://github.com/Shosetsu/CSFFHouseMover/blob/master/README.md)
-[![en](https://img.shields.io/badge/lang-en-blue.svg)](https://github.com/Shosetsu/CSFFHouseMover/blob/master/README_en.md)
+[![zh](https://img.shields.io/badge/lang-zh-red.svg)](README.md)
+[![en](https://img.shields.io/badge/lang-en-blue.svg)](README_en.md)
 
 > 一个用于《卡牌生存：奇幻森林》（Card Survival: Fantasy Forest）游戏的存档编辑小工具，帮助你轻松将建筑、设施等卡片从一个地点“搬”到另一个地点。
 

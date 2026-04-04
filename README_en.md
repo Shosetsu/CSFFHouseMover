@@ -1,7 +1,7 @@
 # Card Survival: Fantasy Forest Savegame Mover
 
-[![zh](https://img.shields.io/badge/lang-zh-red.svg)](https://github.com/Shosetsu/CSFFHouseMover/blob/master/README.md)
-[![en](https://img.shields.io/badge/lang-en-blue.svg)](https://github.com/Shosetsu/CSFFHouseMover/blob/master/README_en.md)
+[![zh](https://img.shields.io/badge/lang-zh-red.svg)](README.md)
+[![en](https://img.shields.io/badge/lang-en-blue.svg)](README_en.md)
 
 > A handy save editor for the game _Card Survival: Fantasy Forest_, allowing you to easily "move" buildings, facilities, and other cards from one location to another.
 
